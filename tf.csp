@@ -1,0 +1,54 @@
+
+
+datatype STATUS = limpo | bloqueado
+datatype FAZ = entrando | usando | saindo
+
+channel leitor:FAZ
+channel escritor:FAZ
+channel juiz:STATUS
+
+-- leitores ( conjunto de leitores)
+
+LEITORES = leitor.entrando -> leitor.usando -> leitor.saindo -> LEITORES
+
+-- escritores ( conjunto de escritor)
+
+ESCRITORES = escritor.entrando -> escritor.usando -> escritor.saindo -> ESCRITORES
+
+
+CR_UP =  leitor.entrando -> CR_UP
+      [] leitor.usando -> CR_UP
+      [] leitor.saindo -> CR_UP
+      [] escritor.entrando -> CR_UP
+      [] escritor.usando -> CR_UP
+      [] escritor.saindo -> CR_UP
+      [] juiz.bloqueado -> CR_DOWN
+
+CR_DOWN =  leitor.entrando -> CR_DOWN
+      [] leitor.saindo -> CR_DOWN
+      [] escritor.entrando -> CR_DOWN
+      [] escritor.usando -> CR_DOWN
+      [] escritor.saindo -> CR_DOWN
+      [] juiz.limpo -> CR_UP
+
+-- The crossing, leitors and escritors - still no restrictions on the juiz
+-- Notice that we only have to put the channel names, not all the 
+-- individual events, in the alphabets for [ || ]
+
+SYSTEM = (CR_UP [ {|leitor,escritor,juiz|} || {|leitor|} ] LEITORES)
+          [ {|leitor,escritor,juiz|} || {|escritor|} ] ESCRITORES
+
+
+-- Now we can restrict the use of the juiz
+
+CONTROL =  escritor.entrando-> juiz.bloqueado -> CONTROL_D
+        [] leitor.entrando -> leitor.entrando -> leitor.saindo -> CONTROL
+CONTROL_D = escritor.entrando -> escritor.saindo -> (juiz.limpo -> CONTROL
+                                          [] escritor.entrando -> CONTROL_D)
+
+-- The system with control added
+
+SAFE_SYSTEM = SYSTEM 
+                [ {|escritor,leitor,juiz|} || {|escritor,leitor,juiz|} ]
+              CONTROL 
+
