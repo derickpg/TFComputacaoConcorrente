@@ -31,10 +31,6 @@ CR_DOWN =  leitor.entrando -> CR_DOWN
       [] escritor.saindo -> CR_DOWN
       [] juiz.limpo -> CR_UP
 
--- The crossing, leitors and escritors - still no restrictions on the juiz
--- Notice that we only have to put the channel names, not all the 
--- individual events, in the alphabets for [ || ]
-
 SYSTEM = (CR_UP [ {|leitor,escritor,juiz|} || {|leitor|} ] LEITORES)
           [ {|leitor,escritor,juiz|} || {|escritor|} ] ESCRITORES
 
@@ -42,7 +38,7 @@ SYSTEM = (CR_UP [ {|leitor,escritor,juiz|} || {|leitor|} ] LEITORES)
 -- Now we can restrict the use of the juiz
 
 CONTROL =  escritor.entrando-> juiz.bloqueado -> CONTROL_D
-        [] leitor.entrando -> leitor.entrando -> leitor.saindo -> CONTROL
+        [] leitor.entrando -> leitor.usando -> leitor.saindo -> CONTROL
 CONTROL_D = escritor.entrando -> escritor.saindo -> (juiz.limpo -> CONTROL
                                           [] escritor.entrando -> CONTROL_D)
 
