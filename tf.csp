@@ -44,7 +44,7 @@ CONTROL_D = escritor.entrando -> escritor.saindo -> (juiz.limpo -> CONTROL
 
 -- The system with control added
 
-SAFE_SYSTEM = SYSTEM 
+SAFE_SYSTEM = SYSTEM  
                 [ {|escritor,leitor,juiz|} || {|escritor,leitor,juiz|} ]
               CONTROL 
 
