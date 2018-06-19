@@ -1,6 +1,5 @@
 
-
-datatype STATUS = limpo | bloqueado
+datatype STATUS = liberado | bloqueado
 datatype FAZ = entrando | usando | saindo
 
 channel leitor:FAZ
@@ -15,36 +14,30 @@ LEITORES = leitor.entrando -> leitor.usando -> leitor.saindo -> LEITORES
 
 ESCRITORES = escritor.entrando -> escritor.usando -> escritor.saindo -> ESCRITORES
 
+JUIZ_LIBERA =  leitor.entrando -> JUIZ_LIBERA
+      [] leitor.usando -> JUIZ_LIBERA
+      [] leitor.saindo -> JUIZ_LIBERA
+      [] escritor.entrando -> juiz.bloqueado -> JUIZ_BLOQ
 
-CR_UP =  leitor.entrando -> CR_UP
-      [] leitor.usando -> CR_UP
-      [] leitor.saindo -> CR_UP
-      [] escritor.entrando -> CR_UP
-      [] escritor.usando -> CR_UP
-      [] escritor.saindo -> CR_UP
-      [] juiz.bloqueado -> CR_DOWN
+JUIZ_BLOQ = escritor.usando -> JUIZ_BLOQ
+      [] escritor.saindo -> juiz.liberado -> JUIZ_LIBERA
 
-CR_DOWN =  leitor.entrando -> CR_DOWN
-      [] leitor.saindo -> CR_DOWN
-      [] escritor.entrando -> CR_DOWN
-      [] escritor.usando -> CR_DOWN
-      [] escritor.saindo -> CR_DOWN
-      [] juiz.limpo -> CR_UP
-
-SYSTEM = (CR_UP [ {|leitor,escritor,juiz|} || {|leitor|} ] LEITORES)
-          [ {|leitor,escritor,juiz|} || {|escritor|} ] ESCRITORES
+SYSTEM = (JUIZ_LIBERA [ {|leitor,escritor,juiz|} || {|escritor|} ] ESCRITORES)
+          [ {|leitor,escritor,juiz|} || {|leitor|} ] LEITORES
 
 
--- Now we can restrict the use of the juiz
+-- Controle de entrada e saida pelos escritores e leitores
 
-CONTROL =  escritor.entrando-> juiz.bloqueado -> CONTROL_D
-        [] leitor.entrando -> leitor.usando -> leitor.saindo -> CONTROL
-CONTROL_D = escritor.entrando -> escritor.saindo -> (juiz.limpo -> CONTROL
-                                          [] escritor.entrando -> CONTROL_D)
+CONTROL =  escritor.entrando-> juiz.bloqueado -> escritor.usando -> escritor.saindo -> juiz.liberado -> CONTROL
+           [] leitor.entrando -> leitor.usando -> CONTROL_L
+
+CONTROL_L = leitor.entrando -> leitor.usando -> leitor.saindo -> CONTROL_L
+            [] leitor.entrando -> leitor.usando -> CONTROL_L
+            [] leitor.saindo -> CONTROL_L
+            [] leitor.saindo -> CONTROL
 
 -- The system with control added
 
-SAFE_SYSTEM = SYSTEM  
+SAFE_SYSTEM = SYSTEM
                 [ {|escritor,leitor,juiz|} || {|escritor,leitor,juiz|} ]
-              CONTROL 
-
+              CONTROL
