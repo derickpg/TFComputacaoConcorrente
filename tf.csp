@@ -1,6 +1,6 @@
 
-datatype STATUS = liberado | bloqueado
-datatype FAZ = entrando | usando | saindo
+datatype STATUS = libera | bloqueia
+datatype FAZ = entra | usa | sai
 
 channel leitor:FAZ
 channel escritor:FAZ
@@ -8,33 +8,33 @@ channel juiz:STATUS
 
 -- leitores ( conjunto de leitores)
 
-LEITORES = leitor.entrando -> leitor.usando -> leitor.saindo -> LEITORES
+LEITORES = leitor.entra -> leitor.usa -> leitor.sai -> LEITORES
 
 -- escritores ( conjunto de escritor)
 
-ESCRITORES = escritor.entrando -> escritor.usando -> escritor.saindo -> ESCRITORES
+ESCRITORES = escritor.entra -> escritor.usa -> escritor.sai -> ESCRITORES
 
-JUIZ_LIBERA =  leitor.entrando -> JUIZ_LIBERA
-      [] leitor.usando -> JUIZ_LIBERA
-      [] leitor.saindo -> JUIZ_LIBERA
-      [] escritor.entrando -> juiz.bloqueado -> JUIZ_BLOQ
+LIBERAR =  leitor.entra -> LIBERAR
+      [] leitor.usa -> LIBERAR
+      [] leitor.sai -> LIBERAR
+      [] escritor.entra -> juiz.bloqueia -> BLOQUEAR
 
-JUIZ_BLOQ = escritor.usando -> JUIZ_BLOQ
-      [] escritor.saindo -> juiz.liberado -> JUIZ_LIBERA
+BLOQUEAR = escritor.usa -> escritor.sai -> juiz.libera -> LIBERAR
 
-SYSTEM = (JUIZ_LIBERA [ {|leitor,escritor,juiz|} || {|escritor|} ] ESCRITORES)
+------------- NAO SABEMOS COMO PROCEDER NO SYSTEM E NO SAFE_SYSTEM
+SYSTEM = (BLOQUEAR [ {|leitor,escritor,juiz|} || {|escritor|} ] ESCRITORES)
           [ {|leitor,escritor,juiz|} || {|leitor|} ] LEITORES
-
+---------------
 
 -- Controle de entrada e saida pelos escritores e leitores
 
-CONTROL =  escritor.entrando-> juiz.bloqueado -> escritor.usando -> escritor.saindo -> juiz.liberado -> CONTROL
-           [] leitor.entrando -> leitor.usando -> CONTROL_L
+CONTROL =  escritor.entra-> juiz.bloqueia -> escritor.usa -> escritor.sai -> juiz.libera -> CONTROL
+           [] leitor.entra -> leitor.usa -> CONTROL_L
 
-CONTROL_L = leitor.entrando -> leitor.usando -> leitor.saindo -> CONTROL_L
-            [] leitor.entrando -> leitor.usando -> CONTROL_L
-            [] leitor.saindo -> CONTROL_L
-            [] leitor.saindo -> CONTROL
+CONTROL_L = leitor.entra -> leitor.usa -> leitor.sai -> CONTROL_L
+            [] leitor.entra -> leitor.usa -> CONTROL_L
+            [] leitor.sai -> CONTROL_L
+            [] leitor.sai -> CONTROL
 
 -- The system with control added
 
