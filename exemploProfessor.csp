@@ -1,0 +1,56 @@
+--  Leitores Escritores
+--  Dotti
+
+NL = 2     -- numero de leitores
+NE = 2     -- numero de escritores
+
+IdLeitores =   {1 .. NL} 
+IdEscritores = {1 .. NE} 
+
+Valor = IdEscritores
+
+-- canais
+
+channel inicL,fimL: IdLeitores
+channel inicE,fimE: IdEscritores
+
+channel le:IdLeitores.Valor
+channel escreve:IdEscritores.Valor
+
+-- leitores e escritores
+
+Leitor(i) = inicL!i -> le.i?v -> fimL!i -> Leitor(i)
+Leitores = ||| i:IdLeitores @ Leitor(i)  
+IfLeitores = { inicL.i, le.i.v, fimL.i | i: IdLeitores , v: Valor}
+
+Escritor(i) = inicE!i -> escreve.i!i-> fimE!i -> Escritor(i)
+Escritores = ||| i:IdEscritores @ Escritor(i)  
+IfEscritores = { inicE.i, escreve.i.v, fimE.i | i: IdEscritores , v: Valor}
+
+
+-- Recurso 
+
+Dado = D(1)
+D(v) =     le?l!v -> D(v)
+       []  escreve?e?nv -> D(nv)     
+
+-- composicao 
+
+RW = (Dado ||| Controle) [| union(IfEscritores,IfLeitores)|] (Leitores ||| Escritores)
+
+--
+
+Controle = C(0)
+C(s) = 
+    if s==0
+    then ( inicL?l -> C(1)
+	       []
+  		   inicE?e -> fimE.e -> C(s) )
+    else if s<NL
+	     then ( inicL?l -> C(s+1)
+		        []
+		        fimL?l -> C(s-1)  )
+		 else fimL?l -> C(s-1) 		
+		 			  	
+  
+    						

@@ -2,42 +2,42 @@
 datatype STATUS = libera | bloqueia
 datatype FAZ = entra | usa | sai
 
-channel leitor:FAZ
+channel leitor.n:FAZ
 channel escritor:FAZ
 channel juiz:STATUS
 
--- leitores ( conjunto de leitores)
+-- LEITORES ( conjunto de LEITORES)
 
-LEITORES = leitor.entra -> leitor.usa -> leitor.sai -> LEITORES
+LEITORES(n) = leitor.n.entra -> leitor.n.usa -> leitor.n.sai -> LEITORES
 
 -- escritores ( conjunto de escritor)
 
 ESCRITORES = escritor.entra -> escritor.usa -> escritor.sai -> ESCRITORES
 
-LIBERAR =  leitor.entra -> LIBERAR
-      [] leitor.usa -> LIBERAR
-      [] leitor.sai -> LIBERAR
+LIBERAR =  leitor.n.entra -> LIBERAR
+      [] leitor.n.usa -> LIBERAR
+      [] leitor.n.sai -> LIBERAR
       [] escritor.entra -> juiz.bloqueia -> BLOQUEAR
 
 BLOQUEAR = escritor.usa -> escritor.sai -> juiz.libera -> LIBERAR
 
 ------------- NAO SABEMOS COMO PROCEDER NO SYSTEM E NO SAFE_SYSTEM
-SYSTEM = (BLOQUEAR [ {|leitor,escritor,juiz|} || {|escritor|} ] ESCRITORES)
-          [ {|leitor,escritor,juiz|} || {|leitor|} ] LEITORES
+SYSTEM = (BLOQUEAR [ {|leitor.n,escritor,juiz|} || {|escritor|} ] ESCRITORES)
+          [ {|leitor.n,escritor,juiz|} || {|leitor.n|} ] LEITORES
 ---------------
 
--- Controle de entrada e saida pelos escritores e leitores
+-- Controle de entrada e saida pelos escritores e LEITORES
 
 CONTROL =  escritor.entra-> juiz.bloqueia -> escritor.usa -> escritor.sai -> juiz.libera -> CONTROL
-           [] leitor.entra -> leitor.usa -> CONTROL_L
+           [] leitor.n.entra -> leitor.n.usa -> CONTROL_L
 
-CONTROL_L = leitor.entra -> leitor.usa -> leitor.sai -> CONTROL_L
-            [] leitor.entra -> leitor.usa -> CONTROL_L
-            [] leitor.sai -> CONTROL_L
-            [] leitor.sai -> CONTROL
+CONTROL_L = leitor.n.entra -> leitor.n.usa -> leitor.n.sai -> CONTROL_L
+            [] leitor.n.entra -> leitor.n.usa -> CONTROL_L
+            [] leitor.n.sai -> CONTROL_L
+            [] leitor.n.sai -> CONTROL
 
 -- The system with control added
 
 SAFE_SYSTEM = SYSTEM
-                [ {|escritor,leitor,juiz|} || {|escritor,leitor,juiz|} ]
+                [ {|escritor,leitor.n,juiz|} || {|escritor,leitor.n,juiz|} ]
               CONTROL

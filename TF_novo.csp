@@ -1,0 +1,70 @@
+QL = 2 -- Quantidade de Leitores
+QE = 2 -- Quantidade de Escritores
+
+IDL = {1 .. QL}
+IDE = {1 .. QE}
+
+-- ??????????????????????o que é valor?
+Valor = IDE
+
+-- LEITORES ( conjunto de LEITORES)
+	
+	-- Channels do Leitor
+	channel leitorEntra,leitorSai: IDL
+	channel leitorLendo:IDL.Valor
+
+	-- Define o que cada leitor vai fazer
+	Leitor(n) = leitorEntra!n -> leitorLendo.n?v -> leitorSai!n -> Leitor(n)
+
+	-- Colocar todos os leitores juntos para executar
+	Leitores = ||| n:IDL @ Leitor(n)  
+
+	-- Define as ações que cada leitor pode fazer, <-- OBS NÃO ENTENDI O VALOR
+	AcoesLeitores = { leitorEntra.n, leitorLendo.n.v, leitorSai.n | n: IDL , v: Valor}
+
+
+-- Escritores ( conjunto de escritor)
+
+	-- Channels do Escritor
+	channel escritorEntra,escritorSai: IDE
+	channel escritorEscreve:IDE.Valor
+
+	-- Define o que cada Escritor pode fazer
+	Escritor(n) = escritorEntra!n -> escritorEscreve.n!n-> escritorSai!n -> Escritor(n)
+
+	-- Coloca N escritores em parelelo
+	Escritores = ||| n:IDE @ Escritor(n)  
+
+	-- Define as ações de cada Escritor
+	AcoesEscritores = { escritorEntra.n, escritorEscreve.n.v, escritorSai.n | n: IDE , v: Valor}
+
+	
+-- DADO ( pensando como se fosse o trilho )
+Dado = D(1)
+D(v) = 		leitorLendo?l!v -> D(v)    -- Pergunta se o tem algum leitor lendo  ( ???? o que é l ??)
+		[]  escritorEscreve?e?nv -> D(nv) -- Pergunta se tem um escritor lendo ( ??? o que é o e ??)
+		
+-- RODANDO EM PARALELO
+
+LE = (Dado ||| Controle) [| union(AcoesEscritores,AcoesLeitores)|] (Leitores ||| Escritores)
+
+
+-- Realiza o controle , esse é o juiz 
+
+-- Tem um problema o escritor só entra se tem 0 coisas dentro do controlador, resumindo ele pode nunca entrar
+-- por que os leitores podem ficar entrando e saindo toda a hora!
+
+Controle = C(0)												-- Inicia o controlado com NADA DENTRO
+C(s) = 
+    if s==0													-- Se não tem ninguem lá
+    then ( leitorEntra?l -> C(1)          					-- Entra um leitor, então diz que entrou e vira C(1) com 1 leitor dentro
+	       []
+  		   escritorEntra?e -> escritorSai.e -> C(s) )       -- Entra um Escritor, então ele tem que fazer o processo e sair e retornar C(0)
+    else if s<QL											-- Se ainda pode entrar leitores, ( ou seja não entrou todos)
+	     then ( leitorEntra?l -> C(s+1)						-- Pode entrar mais um leitor e então vira C(s+1) ou seja adiciona mais um leitor
+		        []											
+		        leitorSai?l -> C(s-1)  )					-- Ou então o leitor sai, e tiramos ele de dentro do controlador C(s-1)
+		 else leitorSai?l -> C(s-1) 						-- Se não tem mais leitor para entrar, então só pode estar saindo leitor C(s-1)
+		 
+		 
+		 
