@@ -54,7 +54,7 @@ LE = (Dado ||| Controle) [| union(AcoesEscritores,AcoesLeitores)|] (Leitores |||
 -- Tem um problema o escritor só entra se tem 0 coisas dentro do controlador, resumindo ele pode nunca entrar
 -- por que os leitores podem ficar entrando e saindo toda a hora!
 
-Controle = C(0)												-- Inicia o controlado com NADA DENTRO
+Controle = C(0)												-- Inicia o controlador com NADA DENTRO
 C(s) = 
     if s==0													-- Se não tem ninguem lá
     then ( leitorEntra?l -> C(1)          					-- Entra um leitor, então diz que entrou e vira C(1) com 1 leitor dentro
@@ -67,4 +67,35 @@ C(s) =
 		 else leitorSai?l -> C(s-1) 						-- Se não tem mais leitor para entrar, então só pode estar saindo leitor C(s-1)
 		 
 		 
+		 
+-- *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+
+-- Tentativa para correção da questão dois!
+
+Controle2 = CE(0,0)											-- Inicia o controlador com NADA DENTRO C(numero de leitores,numero de escritores)
+CE(s,e) = 
+    if (e==0)										        -- Se não tem nenhum escritor lá dentro , tanto escritor quanto leitor pode entrar
+    then ( escritorEntra?e -> CE(s,e + 1) )   			    	-- Entra um Escritor C(s,e+1)
+	       []
+  		   leitorEntra?l -> CE(s+1,e)          		     		-- Entra um leitor, então diz que entrou e vira C(s+1,e) com 1 leitor dentro
+	else if (e < QE and s==0)								-- tem escritores e não tem leitores , não pode entrar leitor, só escritor										
+	     then ( escritorEntra?e -> CE(0,e+1)					-- pode entrar um novo escritor
+		        []											
+		        escritorSai?e -> CE(0,e-1)  )					--pode sair um escritor
+		 else if (e < QE and s < QL)						-- Tem escritor e tem leitor, então só pode entrar ou sair um escritor, e os leitores só podem sair
+		 then ( escritorEntra?e -> CE(0,e+1)					-- só escritores podem entrar
+				[]
+				escritorSai?e -> CE(0,e-1)  					--pode sair um escritor
+				[]
+				leitorSai?l -> CE(s-1,e) )						-- Um leitor só pode sair
+			else if( e > QE )								-- se não tem mais escrtor para entrar, então eles só podem sair
+				 then (escritorSai?e -> CE(s,e-1)) 		    	-- só sai escritores
+			     else leitorSai?l -> CE(s-1,e) 				-- Senão só leitor pode sair
+					 
+					 
+LE2 = (Dado ||| Controle2) [| union(AcoesEscritores,AcoesLeitores)|] (Leitores ||| Escritores)
+		 
+		 
+
+
 		 
