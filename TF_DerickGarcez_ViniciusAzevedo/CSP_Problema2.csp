@@ -2,7 +2,7 @@
 -- Trabalho Modelos para Computacao Concorrente
 -- Leitores e Escritores (problema 2) - modelo CSP
 -- Alunos: Derick Garcez
---         Vinicius Azevedo
+--         Vinicius Azevedo   
 -- Escola Politecnica - PUCRS
 -- Desenvolvido a partir do exemplo disponibilizado pelo professor
 --------------------------------------------------------------------------------
@@ -83,6 +83,19 @@ CE(s,y) =
 		then (escritorSai?l -> CE(s,y-1)) 			-- Sai escritor
 		else leitorSai?l -> CE(s-1,y)				 		-- Ainda tem Leitores , sai leitor
 
+--------------------------------------------------------------------------------
+-- Questao Exlusao Mutua
+-- Nesta implementacao a exclusao mutua nao ocorre tambem, pois tambem a cada if
+-- realizado no controle apenas um leitor sai, ou em outro if apenas um escritor sai
+-- ou seja não existe um if que sai leitores e escritores ao mesmo tempo, desta forma
+-- podemos ter certa que apenas 1 (leitor ou escritor) utilizou o dado e depois saiu
+-- pois esses são os passos para o leitor ou escritor sairem do dado.
+-- Exemplo: Escritor entra C(0,1) se ( y < QE and s == 0) entao escritor sai, por que 
+--			ele já utilizou o dado e saiu.
+-- Exemplo 2: Leitor entra C(1,0) se (y == 0 and s < ql) entao leitor sai , por que
+-- 			ele já utilizou o dado e saiu.
+
+--------------------------------------------------------------------------------		
 --------------------------------------------------------------------------------
 -- Questao Starvation
 -- Nesta implementacao, ocorre o problema de Starvation mas inverte o caso,

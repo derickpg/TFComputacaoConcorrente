@@ -70,6 +70,18 @@ C(s) =
 		        []
 		        leitorSai?l -> C(s-1) )											-- Ou então o leitor sai, e tiramos ele de dentro do controlador C(s-1)
 		 else leitorSai?l -> C(s-1) 											  -- Se não tem mais leitor para entrar, então só pode estar saindo leitor C(s-1)
+--------------------------------------------------------------------------------
+-- Questao Exlusao Mutua
+-- Nesta implementacao a exclusao mutua nao ocorre, pois tambem a cada if
+-- realizado no controle apenas um leitor sai, e quando há a entrada de um escritor ele deve entrar
+-- e logo utilizar o dado e sair então nunca temos ninguém utilizando o dado quando um escritor entra
+-- , desta forma podemos ter certa que apenas 1 (leitor ou escritor) utilizou o dado e depois saiu
+-- pois esses são os passos para o leitor ou escritor sairem do dado.
+-- Exemplo: Escritor entra C(1) ele usa o dado e depois Escritor sai C(0)
+-- Exemplo 2: Leitor entra C(1,0) se ( s<ql) entao leitor sai , por que
+-- 			ele já utilizou o dado e saiu.
+--------------------------------------------------------------------------------		
+		      
 
 --------------------------------------------------------------------------------
 -- Questao Starvation
