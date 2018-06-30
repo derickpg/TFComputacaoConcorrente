@@ -1,0 +1,91 @@
+--------------------------------------------------------------------------------
+-- Trabalho Modelos para Computacao Concorrente
+-- Leitores e Escritores (problema 2) - modelo CSP
+-- Alunos: Derick Garcez
+--         Vinicius Azevedo
+-- Escola Politecnica - PUCRS
+-- Desenvolvido a partir do exemplo disponibilizado pelo professor
+--------------------------------------------------------------------------------
+
+-- Quantidade de leitores (QL) e escritores (QE)
+QL = 2
+QE = 2
+
+-- Indice de leitores e escritores
+IDL = {1 .. QL}
+IDE = {1 .. QE}
+
+Valor = IDE
+
+-- LEITORES ( conjunto de LEITORES)
+
+	-- Channels do Leitor
+	channel leitorEntra,leitorSai: IDL
+	channel leitorLendo:IDL.Valor
+
+	-- Define o que cada leitor vai fazer
+	Leitor(n) = leitorEntra!n -> leitorLendo.n?v -> leitorSai!n -> Leitor(n)
+
+	-- Colocar todos os leitores juntos para executar
+	Leitores = ||| n:IDL @ Leitor(n)
+
+	-- Define as ações que cada leitor pode fazer
+	AcoesLeitores = { leitorEntra.n, leitorLendo.n.v, leitorSai.n | n: IDL , v: Valor}
+
+
+-- Escritores ( conjunto de escritor)
+
+	-- Channels do Escritor
+	channel escritorEntra,escritorSai: IDE
+	channel escritorEscreve:IDE.Valor
+
+	-- Define o que cada Escritor pode fazer
+	Escritor(n) = escritorEntra!n -> escritorEscreve.n!n-> escritorSai!n -> Escritor(n)
+
+	-- Coloca N escritores em parelelo
+	Escritores = ||| n:IDE @ Escritor(n)
+
+	-- Define as ações de cada Escritor
+	AcoesEscritores = { escritorEntra.n, escritorEscreve.n.v, escritorSai.n | n: IDE , v: Valor}
+
+
+-- DADO ( pensando como se fosse o trilho )
+Dado = D(1)
+D(v) = 		leitorLendo?l!v -> D(v)     -- Pergunta se tem um leitor lendo
+		[]  escritorEscreve?e?nv -> D(nv) -- Pergunta se tem um escritor lendo
+-- RODANDO EM PARALELO
+
+RW = (Dado ||| Controle) [| union(AcoesEscritores,AcoesLeitores)|] (Leitores ||| Escritores)
+
+-- Realiza o controle , esse é o juiz
+
+Controle = CE(0,0)													-- Inicia o controlador zerado (s-leitor,y-escrit)
+CE(s,y) =
+		if ((y==0) and (s==0))									-- Se não tem nenhum escritor lá dentro e nenhum leitor
+		then ( escritorEntra?e -> CE(0,1)    		-- Entra um Escritor C(s,y+1)
+				[]
+				leitorEntra?l -> CE(1,0) )          -- Entra um leitor, então diz que entrou e vira C(s+1,y) com 1 leitor dentro
+		else if ((y==0) and (s < QL))						-- Se não tem escritor , mas tem leitor
+		then ( escritorEntra?e -> CE(s,1)    		-- Entra um Escritor C(s,y+1)
+				[]
+				leitorEntra?l -> CE(s+1,0)          -- Entra um leitor, então diz que entrou e vira C(s+1,y) com 1 leitor dentro
+				[]
+				leitorSai?l -> CE(s-1,0))           -- Sai um leitor
+		else if (y < QE and s==0)								-- Tem Escritor e não tem leitor
+		then ( escritorEntra?e -> CE(0,y+1)			-- Entra um novo escritor
+				[]
+				escritorSai?e -> CE(0,y-1)  )				-- Sai um escritor
+		else if (y < QE and s < QL)						  -- Tem Escritor e Leitor
+		then ( escritorEntra?e -> CE(s,y+1)			-- só escritores podem entrar
+				[]
+				leitorSai?l -> CE(s-1,y) )					-- Um leitor só pode sair
+		else if(y >= QE) 												-- Ainda pode sair escritores
+		then (escritorSai?l -> CE(s,y-1)) 			-- Sai escritor
+		else leitorSai?l -> CE(s-1,y)				 		-- Ainda tem Leitores , sai leitor
+
+--------------------------------------------------------------------------------
+-- Questao Starvation
+-- Nesta implementacao, ocorre o problema de Starvation mas inverte o caso,
+-- desta vez quem pode ficar esperando infinitamente é um Leitor, pela alta
+-- prioridade de acesso que os escritores tem para escrever.
+--------------------------------------------------------------------------------
